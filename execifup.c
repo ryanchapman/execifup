@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/sysinfo.h>
 
 #define LOG_DEBUG(_fmt, ...)            \
@@ -40,7 +41,7 @@ void usage(char *argv0)
   exit(1);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[], char *envp[])
 {
   if (argc < 3) {
     usage(argv[0]);
@@ -74,12 +75,15 @@ int main(int argc, char *argv[])
   if (si.uptime > secs) {
     LOG_DEBUG("machine has been up at least %ld seconds (actually up %ld secs)\n", secs, si.uptime);
     LOG_DEBUG("executing \"%s\"\n", cmd_if_up);
-    system(cmd_if_up);
+    execle("/bin/sh", "sh", "-c", cmd_if_up, (char *)0, envp);
   } else {
     LOG_DEBUG("machine has NOT been up at least %ld seconds (actually up %ld secs)\n", secs, si.uptime);
     if (cmd_if_not_up != NULL) {
       LOG_DEBUG("executing \"%s\"\n", cmd_if_not_up);
-      system(cmd_if_not_up);
+      execle("/bin/sh", "sh", "-c", cmd_if_not_up, (char *)0, envp);
     }
   }
+
+  // should not get here
+  return 99;
 }
