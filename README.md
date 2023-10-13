@@ -10,11 +10,11 @@ Please open a PR if you add support for a different operating system.
 ## Usage
 
 ```
-execifup <n_secs> "<cmd_if_up_for_n_secs>" "<cmd_if_not_up_for_n_secs>"
+execifup <n_secs> "<cmd_if_up_for_n_secs>" "[cmd_if_not_up_for_n_secs]"
 
-n_secs                    number of seconds machine must be up for
-cmd_if_up_for_n_secs      command to run if the machine has been up n seconds
-cmd_if_not_up_for_n_secs  command to run if the machine has not yet been up n seconds
+n_secs                    required   number of seconds machine must be up for
+cmd_if_up_for_n_secs      required   command to run if the machine has been up n seconds
+cmd_if_not_up_for_n_secs  optional   command to run if the machine has not yet been up n seconds
 ```
 
 ## Examples
@@ -69,4 +69,14 @@ DEBUG: cmd_if_not_up=(false || echo INFO)
 DEBUG: machine has been up at least 60 seconds (actually up 12015 secs)
 DEBUG: executing "(false || echo ERROR)"
 ERROR
+```
+
+## Custom shell
+
+By default, `execifup` will use `/bin/sh` as the shell which your commands are passed to.  If you would like to
+use a different shell, set the environment variable `SHELL`.
+
+For example, to use bash, run something like
+```
+SHELL=/bin/bash execifup 60 "(curl localhost/healthz || echo 'ERROR: healthcheck failed')" &>/proc/1/fd/1
 ```

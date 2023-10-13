@@ -12,6 +12,7 @@ test: execifup
 	(./execifup 99999 "false" "false" && (echo "test fail: should have returned 1" ; exit 1) ; exit 0)
 	./execifup 0 "true" || (echo "test fail: should have returned 0" ; exit 1)
 	(./execifup 0 "false" && (echo "test fail: should have returned 1" ; exit 1) ; exit 0)
+	SHELL=/bin/bash ./execifup 0 'echo $$BASH_VERSION' | grep '[0-9]' || (echo "test fail: custom SHELL is not working"; exit 1)
 	@echo "all tests pass"	
 
 .PHONY: clean
