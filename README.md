@@ -47,6 +47,13 @@ make
 make clean
 ```
 
+### Test
+
+To run all tests:
+```
+make test
+```
+
 ## Debugging
 
 You can set the environment variable `LOG_DEBUG=1` if you'd like the program to print debug logs.
@@ -80,3 +87,24 @@ For example, to use bash, run something like
 ```
 SHELL=/bin/bash execifup 60 "(curl localhost/healthz || echo 'ERROR: healthcheck failed')" &>/proc/1/fd/1
 ```
+
+## Detecting if a shutdown is in progress
+
+If a shutdown is in progress, you probably don't want to run healthchecks, which could fail and log false alarms.
+
+Have your entrypoint write the file `/tmp/shutdown_in_progress` when it gets `SIGTERM`, and `execifup` will
+no longer log false alarms.
+
+(I have a custom `dumb-init` that I may open source which has support for this.  You can also add it yourself fairly easily.)
+
+If `execifup` sees that the file `/tmp/shutdown_in_progress` exists, it justs exits with return code `0`.
+
+To turn off this behavior and have `execifup` ignore the presence of `/tmp/shutdown_in_progress`, set the environment
+variable `IGNORE_SHUTDOWN_FILE=1`.  For example,
+
+```
+root@c815bed12f7c:/src# touch /tmp/shutdown_in_progress
+root@c815bed12f7c:/src# IGNORE_SHUTDOWN_FILE=1 ./execifup 60 "false" "false"
+```
+would return 1
+
