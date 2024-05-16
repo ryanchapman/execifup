@@ -1,18 +1,20 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/sysinfo.h>
 
 #define LOG_DEBUG(_fmt, ...)            \
 ({                                      \
   if (getenv("LOG_DEBUG") != NULL) {    \
     fprintf(stderr, "DEBUG: ");         \
-    fprintf(stderr, _fmt, __VA_ARGS__); \
+    fprintf(stderr, _fmt, ##__VA_ARGS__); \
   }                                     \
 })
 
@@ -29,6 +31,9 @@ void usage(char *argv0)
   fprintf(stderr, " n_secs                    <required>  number of seconds machine must be up for\n");
   fprintf(stderr, " cmd_if_up_for_n_secs      <required>  command to run if the machine has been up n seconds\n"); 
   fprintf(stderr, " cmd_if_not_up_for_n_secs  [optional]  command to run if the machine has not yet been up n seconds\n"); 
+  fprintf(stderr, "\n");
+  fprintf(stderr, "If the file /tmp/shutdown_in_progress exists, assume there is no need to run any commands, and 0 is returned.\n");
+  fprintf(stderr, "You can turn off this behavior by setting the environment variable IGNORE_SHUTDOWN_FILE\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "examples:\n");
   fprintf(stderr, " %s 60 \"(curl localhost/healthz || echo 'ERROR: healthcheck failed')\" &>/proc/1/fd/1\n", argv0);
@@ -48,10 +53,22 @@ void usage(char *argv0)
   exit(1);
 }
 
+bool shutdown_in_progress()
+{
+  struct stat buf;
+
+  return (stat("/tmp/shutdown_in_progress", &buf) == 0);
+}
+
 int main(int argc, char *argv[], char *envp[])
 {
   if (argc < 3) {
     usage(argv[0]);
+  }
+
+  if (getenv("IGNORE_SHUTDOWN_FILE") == NULL && shutdown_in_progress()) {
+    LOG_DEBUG("file /tmp/shutdown_in_progress found, exiting 0\n");
+    exit(0);
   }
 
   char *ssecs = argv[1];
